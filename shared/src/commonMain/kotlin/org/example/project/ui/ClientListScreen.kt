@@ -1,6 +1,8 @@
 package org.example.project.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -66,12 +68,16 @@ sealed class UiState {
 
 @Composable
 fun ClientListScreen(
+    onClientClick: (Client) -> Unit,
+    selectedClientId: Long? = null,
     viewModel: ClientListViewModel = viewModel { ClientListViewModel() }
 ) {
     val uiState by viewModel.uiState.collectAsState()
     ClientListContent(
         uiState = uiState,
-        onRetry = { viewModel.fetchClients() }
+        onRetry = { viewModel.fetchClients() },
+        onClientClick = onClientClick,
+        selectedClientId = selectedClientId
     )
 }
 
@@ -79,7 +85,9 @@ fun ClientListScreen(
 @Composable
 fun ClientListContent(
     uiState: UiState,
-    onRetry: () -> Unit
+    onRetry: () -> Unit,
+    onClientClick: (Client) -> Unit,
+    selectedClientId: Long?
 ) {
     var searchQuery by remember { mutableStateOf("") }
 
@@ -157,7 +165,11 @@ fun ClientListContent(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         items(filteredClients) { client ->
-                            ClientCard(client)
+                            ClientCard(
+                                client = client,
+                                isSelected = client.id == selectedClientId,
+                                onClick = { onClientClick(client) }
+                            )
                         }
                     }
                 }
@@ -186,12 +198,27 @@ fun FilterChip(label: String, selected: Boolean) {
 }
 
 @Composable
-fun ClientCard(client: Client) {
+fun ClientCard(
+    client: Client,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    val borderColor = if (isSelected) Color(0xFF1976D2) else Color.Transparent
+    val borderWidth = if (isSelected) 2.dp else 0.dp
+    val backgroundColor = if (isSelected) Color(0xFFF0F7FF) else Color.White
+
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .then(
+                if (isSelected) {
+                    Modifier.border(borderWidth, borderColor, RoundedCornerShape(16.dp))
+                } else Modifier
+            ),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        colors = CardDefaults.cardColors(containerColor = backgroundColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isSelected) 4.dp else 2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -268,7 +295,9 @@ fun ClientListScreenPreview() {
     MaterialTheme {
         ClientListContent(
             uiState = UiState.Success(sampleClients),
-            onRetry = {}
+            onRetry = {},
+            onClientClick = {},
+            selectedClientId = null
         )
     }
 }
@@ -279,7 +308,9 @@ fun ClientListScreenLoadingPreview() {
     MaterialTheme {
         ClientListContent(
             uiState = UiState.Loading,
-            onRetry = {}
+            onRetry = {},
+            onClientClick = {},
+            selectedClientId = null
         )
     }
 }
@@ -290,7 +321,9 @@ fun ClientListScreenEmptyPreview() {
     MaterialTheme {
         ClientListContent(
             uiState = UiState.Empty,
-            onRetry = {}
+            onRetry = {},
+            onClientClick = {},
+            selectedClientId = null
         )
     }
 }
