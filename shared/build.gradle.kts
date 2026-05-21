@@ -17,8 +17,15 @@ if (localPropertiesFile.exists()) {
     localProperties.load(FileInputStream(localPropertiesFile))
 }
 
-val supabaseUrl = localProperties.getProperty("supabase.url") ?: ""
-val supabaseKey = localProperties.getProperty("supabase.key") ?: ""
+val supabaseUrl = System.getenv("SUPABASE_URL")
+    ?: project.findProperty("supabase.url")?.toString()
+    ?: localProperties.getProperty("supabase.url")
+    ?: ""
+
+val supabaseKey = System.getenv("SUPABASE_KEY")
+    ?: project.findProperty("supabase.key")?.toString()
+    ?: localProperties.getProperty("supabase.key")
+    ?: ""
 
 val generateConfigTask = tasks.register("generateConfig") {
     val outputDir = layout.buildDirectory.dir("generated/source/config/commonMain/kotlin/org/example/project/config").get().asFile
