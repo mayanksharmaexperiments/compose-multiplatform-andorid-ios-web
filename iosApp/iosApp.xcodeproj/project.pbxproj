@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		B660961AD05C467A344D9A12 /* KotlinProject.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = KotlinProject.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B660961AD05C467A344D9A12 /* CMP Project.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "CMP Project.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -59,7 +59,7 @@
 		F095F880B7FBDF7C4FA5D427 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				B660961AD05C467A344D9A12 /* KotlinProject.app */,
+				B660961AD05C467A344D9A12 /* CMP Project.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -87,7 +87,7 @@
 			packageProductDependencies = (
 			);
 			productName = iosApp;
-			productReference = B660961AD05C467A344D9A12 /* KotlinProject.app */;
+			productReference = B660961AD05C467A344D9A12 /* CMP Project.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */

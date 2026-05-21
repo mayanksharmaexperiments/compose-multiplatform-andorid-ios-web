@@ -58,9 +58,12 @@ A premium **Dual-Pane Split-Screen Layout** automatically activates on Web brows
 1. **Initial State (No client selected)**: Left pane displays the client list, and the right pane shows a sleek welcoming empty state description.
 2. **Detail State (Client selected)**: Left pane displays the client list with selected item highlighting, and the right pane displays the active client's comprehensive details.
 
-| Dual-Pane Split-Screen View (Detail Selected) | Welcoming Empty State View |
-|:---:|:---:|
-| ![Web Split-Screen](screenshots/web_split_screen.png) | ![Web Empty State](screenshots/web_empty_state.png) |
+##### **1. Welcoming Empty State View**
+![Web Empty State](screenshots/web_empty_state.png)
+
+##### **2. Dual-Pane Split-Screen View (Detail Selected)**
+![Web Split-Screen](screenshots/web_split_screen.png)
+
 
 ---
 
