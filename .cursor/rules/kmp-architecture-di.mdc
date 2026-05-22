@@ -1,0 +1,23 @@
+---
+description: Enforces Clean Architecture boundaries, SOLID principles, and Koin DI module structure inside the project.
+globs: **/di/**/*.kt, **/repository/**/*.kt, **/usecase/**/*.kt, **/domain/**/*.kt
+---
+# KMP Clean Architecture & Dependency Injection Rules
+
+This rule is applied automatically when viewing or editing architecture elements, domain modules, repositories, or dependency injection setups.
+
+## 1. Clean Layer Boundaries
+*Respect the separation of layers to keep the codebase highly maintainability and testable.*
+
+*   ✅ **Pure Domain:** The Domain layer must be pure Kotlin (zero framework or third-party serialization dependencies).
+*   ✅ **Dependency Inversion:** ViewModels and Use Cases must depend purely on Repository interfaces, never on concrete repository implementations or database helpers.
+*   ✅ **DTO Encapsulation:** Define distinct DTO classes for database tables (Room) and network payloads (Ktor/Supabase). Use extension mappers in the Data layer to map DTOs into Domain Entities before passing them to the domain/view layers.
+
+---
+
+## 2. Koin DI Conventions
+*Maintain a structured, modular dependency injection graph.*
+
+*   ✅ **Constructor Injection:** Inject all dependencies through the class constructor. Avoid hardcoded object initializations.
+*   ✅ **Modular DI Setup:** Separate Koin bindings into focused modules (Network, Database, Repository, Domain, ViewModel) in `commonMain`.
+*   ✅ **Platform Context Scoping:** Keep platform-specific contexts (like Android `Context`) encapsulated inside platform DI modules in `androidMain`. Never leak them into the shared common DI modules.

@@ -1,4 +1,4 @@
-package org.example.project.ui
+package org.example.project.presentation.client
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Search
@@ -19,64 +20,24 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
-import org.example.project.model.Client
-import org.example.project.repository.ClientRepository
-
-class ClientListViewModel : ViewModel() {
-    private val repository = ClientRepository()
-    
-    private val _uiState = MutableStateFlow<UiState>(UiState.Loading)
-    val uiState: StateFlow<UiState> = _uiState
-
-    init {
-        fetchClients()
-    }
-
-    fun fetchClients() {
-        viewModelScope.launch {
-            _uiState.value = UiState.Loading
-            try {
-                val clients = repository.getClients()
-                if (clients.isEmpty()) {
-                    _uiState.value = UiState.Empty
-                } else {
-                    _uiState.value = UiState.Success(clients)
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                _uiState.value = UiState.Error(e.message ?: "Unknown error")
-            }
-        }
-    }
-}
-
-sealed class UiState {
-    data object Loading : UiState()
-    data object Empty : UiState()
-    data class Success(val clients: List<Client>) : UiState()
-    data class Error(val message: String) : UiState()
-}
+import org.koin.compose.viewmodel.koinViewModel
+import org.example.project.domain.model.Client
 
 @Composable
 fun ClientListScreen(
     onClientClick: (Client) -> Unit,
+    onLogoutClick: () -> Unit,
     selectedClientId: Long? = null,
-    viewModel: ClientListViewModel = viewModel { ClientListViewModel() }
+    viewModel: ClientListViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     ClientListContent(
         uiState = uiState,
         onRetry = { viewModel.fetchClients() },
         onClientClick = onClientClick,
+        onLogoutClick = onLogoutClick,
         selectedClientId = selectedClientId
     )
 }
@@ -87,6 +48,7 @@ fun ClientListContent(
     uiState: UiState,
     onRetry: () -> Unit,
     onClientClick: (Client) -> Unit,
+    onLogoutClick: () -> Unit,
     selectedClientId: Long?
 ) {
     var searchQuery by remember { mutableStateOf("") }
@@ -100,12 +62,25 @@ fun ClientListContent(
                     .windowInsetsPadding(WindowInsets.statusBars)
                     .padding(horizontal = 16.dp, vertical = 24.dp)
             ) {
-                Text(
-                    text = "My Clients",
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF1A1A1A)
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "My Clients",
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF1A1A1A)
+                    )
+                    IconButton(onClick = onLogoutClick) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                            contentDescription = "Sign Out",
+                            tint = Color(0xFF673AB7)
+                        )
+                    }
+                }
                 Spacer(modifier = Modifier.height(16.dp))
                 OutlinedTextField(
                     value = searchQuery,
@@ -245,9 +220,10 @@ fun ClientCard(
                         fontSize = 18.sp,
                         color = Color(0xFF212121)
                     )
-                    if (client.createdAt != null) {
+                    val createdAt = client.createdAt
+                    if (createdAt != null) {
                         Text(
-                            text = "Joined: ${client.createdAt.take(10)}", 
+                            text = "Joined: ${createdAt.take(10)}", 
                             color = Color.Gray,
                             fontSize = 12.sp
                         )
@@ -265,65 +241,23 @@ fun ClientCard(
             HorizontalDivider(color = Color(0xFFF5F5F5))
             Spacer(modifier = Modifier.height(16.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                if (!client.phoneNo.isNullOrEmpty()) {
+                val phoneNo = client.phoneNo
+                if (!phoneNo.isNullOrEmpty()) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Phone, contentDescription = "Phone", tint = Color.Gray, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text(client.phoneNo, color = Color.DarkGray, fontSize = 14.sp)
+                        Text(phoneNo, color = Color.DarkGray, fontSize = 14.sp)
                     }
                 }
-                if (!client.address.isNullOrEmpty()) {
+                val address = client.address
+                if (!address.isNullOrEmpty()) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.LocationOn, contentDescription = "Address", tint = Color.Gray, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text(client.address, color = Color.DarkGray, fontSize = 14.sp, maxLines = 1)
+                        Text(address, color = Color.DarkGray, fontSize = 14.sp, maxLines = 1)
                     }
                 }
             }
         }
-    }
-}
-
-@Preview
-@Composable
-fun ClientListScreenPreview() {
-    val sampleClients = listOf(
-        Client(id = 1, name = "John Doe", phoneNo = "+1 234 567 890", address = "123 Main St, New York", createdAt = "2023-10-27T10:00:00Z"),
-        Client(id = 2, name = "Jane Smith", phoneNo = "+1 987 654 321", address = "456 Oak Ave, Los Angeles", createdAt = "2023-11-15T14:30:00Z"),
-        Client(id = 3, name = "Alice Johnson", phoneNo = "+1 555 012 3456", address = "789 Pine Rd, Chicago", createdAt = "2024-01-05T09:15:00Z")
-    )
-    MaterialTheme {
-        ClientListContent(
-            uiState = UiState.Success(sampleClients),
-            onRetry = {},
-            onClientClick = {},
-            selectedClientId = null
-        )
-    }
-}
-
-@Preview
-@Composable
-fun ClientListScreenLoadingPreview() {
-    MaterialTheme {
-        ClientListContent(
-            uiState = UiState.Loading,
-            onRetry = {},
-            onClientClick = {},
-            selectedClientId = null
-        )
-    }
-}
-
-@Preview
-@Composable
-fun ClientListScreenEmptyPreview() {
-    MaterialTheme {
-        ClientListContent(
-            uiState = UiState.Empty,
-            onRetry = {},
-            onClientClick = {},
-            selectedClientId = null
-        )
     }
 }

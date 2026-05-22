@@ -1,0 +1,75 @@
+# Compose Multiplatform (CMP) & Kotlin Multiplatform (KMP) Rules
+
+This project-wide rules file establishes global constraints, design patterns, and programming boundaries for Claude Code and other artificial intelligence agents interacting with this workspace.
+
+---
+
+## 1. Core Architecture Boundaries (Always Enforced)
+
+### Strict Layer Isolation (SOLID & Clean Architecture)
+1. **Pure Domain (`commonMain/kotlin/.../domain`):** Must consist of pure Kotlin code. Absolutely zero dependencies on Ktor, Room, Supabase, Serialization, or platform-specific frameworks are permitted.
+2. **Encapsulated Data (`commonMain/kotlin/.../data`):** Database tables, SQL entities, Ktor endpoints, JSON DTOs, and serialization models must remain strictly encapsulated inside the Data layer. Never leak these types to the domain or presentation layers.
+3. **DTO-to-Domain Mapping:** Data layers must always use extension mapper functions to transform raw DTOs into pure immutable Domain Entities before passing them back to the domain/view layers.
+4. **Dependency Inversion:** ViewModels and Domain Use Cases must depend purely on Repository *interfaces* (defined in the Domain layer), never on concrete repository implementations, databases, or network clients.
+
+### Dependency Injection (Koin)
+1. **No Object Singletons:** Never use `object` declarations to manage repositories or API services. Define dependencies inside Koin modules and utilize constructor injection.
+2. **Modular DI Graph:** Segment Koin definitions into focused modules (Network, Database, Repository, Domain, ViewModel) inside `commonMain`.
+3. **Platform Scoping:** Platform-specific DI configurations (like Android `Context`) must be encapsulated inside `androidMain` modules and never leaked into `commonMain`.
+
+---
+
+## 2. Kotlin Multiplatform (KMP) Boundaries
+
+### commonMain Platform-Independence
+1. **No Android Leakage:** Never import `android.*`, `androidx.activity.*`, `androidx.lifecycle.ViewModel` (use `androidx.lifecycle.ViewModel` with KMP support), `android.widget.*`, or Android resource identifiers (`R.string.*`) inside `commonMain` code.
+2. **No iOS Leakage:** Never import Apple CocoaPods, Swift components, or Foundation framework items (like `platform.UIKit.*`, `NSObject`, or `NSString`) inside `commonMain`.
+3. **Resource System (`Res`):** Always use Compose Multiplatform resources (`Res.string.*`, `Res.drawable.*` via `stringResource`) instead of Android's `R` context.
+
+### Platform Decoupling
+1. **Interfaces over expect/actual:** For complex platform integrations (e.g. bluetooth, filesystem, permissions), define a pure interface in the domain layer, implement it natively in `androidMain`/`iosMain`, and inject it via Koin.
+2. **expect/actual for Utilities:** Limit `expect` / `actual` structures to simple, lightweight utility functions.
+
+---
+
+## 3. Data & Networking (Ktor, Supabase, Room, DataStore)
+
+### Ktor Networking
+1. **Single HttpClient:** Rely on a single Ktor `HttpClient` instance configured with `ContentNegotiation` using `kotlinx.serialization`.
+2. **Platform-Independent Engines:** Never hardcode specific networking engines (e.g., `OkHttp` or `Darwin`) inside `commonMain`. Allow the system or DI to select default engines.
+3. **Error Mapping:** Always wrap Ktor requests in a safe try-catch handler and map network exceptions (like `ResponseException` or `IOException`) to custom domain exception types.
+
+### Supabase Integration
+1. **Query Construction:** Use the type-safe Postgrest DSL `postgrest["TableName"].select()` for queries.
+2. **Auth Sessions:** Utilize Supabase's `sessionFlow` to reactively listen to auth status changes and update UI navigation states. Do not cache tokens in custom local parameters.
+
+### Relational Persistence (Room DB)
+1. **Local Single Source of Truth (SSOT):** Always expose local database flows from Room DAOs to the presentation layer. Use remote sync tasks in repositories to refresh the local cache in the background (offline-first model).
+2. **Room Builders:** Construct Room instances using multiplatform database builders with sqlite platform drivers. Do not expose Room annotations to the Domain layer.
+
+### Key-Value Storage (DataStore & Secure Settings)
+1. **Jetpack DataStore:** Use KMP Jetpack DataStore to store non-sensitive key-value preferences (e.g., dark theme selection) asynchronously via Flow.
+2. **Insecure Storage Prohibition:** Never store plain passwords, authorization keys, or JWT tokens inside plaintext Datastore Preferences.
+3. **Secure Settings:** Store all sensitive session secrets using OS hardware keys (iOS Keychain and Android EncryptedSharedPreferences) via KMP secure settings.
+
+---
+
+## 4. Compose UI & Navigation (Material 3 & Navigation 3)
+
+### Declarative UI Rendering
+1. **State Hoisting:** Host states in ViewModels or parent screens and pass immutable data values and callbacks down to child composables to make them completely stateless.
+2. **Lifecycle State Collection:** Never collect StateFlows using the basic `.collectAsState()`. You must **always** collect using `.collectAsStateWithLifecycle()` to prevent background processing leaks and memory drain.
+3. **Lazy Layout Keys:** Always supply unique, stable `key` values and specify `contentType` inside `LazyColumn` and `LazyRow` loops to optimize rendering recycling.
+4. **Lambda State Deferral:** Defer fast-changing states (e.g., scroll positions, offsets, dynamic colors, animations) by reading them inside modifier lambdas (e.g., `offset { ... }` or `drawBehind { ... }`) to skip unnecessary composition/layout passes.
+
+### State-Driven Navigation (Navigation 3)
+1. **State-Driven Backstack:** Model the backstack as a pure `List<Route>` flow managed within your shared ViewModels.
+2. **Type-Safe Routes:** Declare routes as serialized Kotlin data objects. Never use string-based route paths which bypass compiler validation.
+3. **Declarative Router:** Observe the backstack flow at your root screen and conditionally render screens based on the active destination state.
+
+---
+
+## 5. AI Interaction & Debugging Guidelines
+
+### Mandatory Root Cause Analysis (RCA)
+1. **Mandatory Root Cause Analysis (RCA):** Whenever the user shares an error, bug, or asks a question/problem, the AI assistant MUST always analyze, identify, and clearly explain the root cause *before* proposing or implementing a solution. This ensures all debugging is grounded in deep understanding.

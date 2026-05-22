@@ -1,0 +1,37 @@
+---
+description: Enforces strict platform boundaries and KMP-compatible dependencies inside the commonMain source set.
+globs: shared/src/commonMain/**/*.kt
+---
+# Kotlin Multiplatform (KMP) commonMain Boundaries
+
+This rule is applied automatically when viewing or editing files within the shared `commonMain` source set. It prevents platform-specific leakage and enforces multiplatform compatibility.
+
+## 1. Platform Import Prohibitions
+*`commonMain` is a platform-independent module. The compiler will reject platform-specific code. AI must NEVER suggest native imports.*
+
+*   ❌ **NO Android imports:** Never import `android.*`, `androidx.activity.*`, `androidx.lifecycle.ViewModel` (use `androidx.lifecycle.ViewModel` with KMP support), `android.widget.*`, or Android resource identifiers (`R.string.*`).
+*   ❌ **NO iOS/Darwin imports:** Never import CocoaPods, Swift components, or Foundation elements (like `platform.UIKit.*`, `NSObject`, or `NSString`) in commonMain.
+*   ❌ **NO JVM-only imports:** Avoid Java standard library classes that are not part of the Kotlin common standard library (e.g., `java.io.File`, `java.net.*`).
+
+---
+
+## 2. Resource Management
+*Compose Multiplatform uses a dedicated, generated resources system (`Res`) instead of standard Android resources (`R`).*
+
+*   ✅ **DO USE:** Compose Multiplatform resources:
+    ```kotlin
+    import org.example.project.shared.resources.Res
+    import org.example.project.shared.resources.my_string
+    import org.jetbrains.compose.resources.stringResource
+
+    val label = stringResource(Res.string.my_string)
+    ```
+*   ❌ **NEVER USE:** `R.string.my_string` or Android's context-based `context.getString(id)`.
+
+---
+
+## 3. Platform Abstractions
+*When a platform-specific feature is required (e.g., accessing local file directories, device UUIDs, or Bluetooth), abstract it.*
+
+*   ✅ **Prefer Interface Injection:** Define a pure Kotlin interface in the domain layer and implement it separately in `androidMain` and `iosMain`. Inject it using Koin.
+*   ✅ **Use expect/actual strategically:** For simple utilities, use Kotlin's `expect` / `actual` keywords. Keep `expect` functions simple, lightweight, and focused.

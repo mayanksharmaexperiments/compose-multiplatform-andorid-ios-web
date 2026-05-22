@@ -11,43 +11,6 @@ plugins {
     alias(libs.plugins.kotlinSerialization)
 }
 
-val localProperties = Properties()
-val localPropertiesFile = rootProject.file("local.properties")
-if (localPropertiesFile.exists()) {
-    localProperties.load(FileInputStream(localPropertiesFile))
-}
-
-val supabaseUrl = System.getenv("SUPABASE_URL")
-    ?: project.findProperty("supabase.url")?.toString()
-    ?: localProperties.getProperty("supabase.url")
-    ?: ""
-
-val supabaseKey = System.getenv("SUPABASE_KEY")
-    ?: project.findProperty("supabase.key")?.toString()
-    ?: localProperties.getProperty("supabase.key")
-    ?: ""
-
-val generateConfigTask = tasks.register("generateConfig") {
-    val outputDir = layout.buildDirectory.dir("generated/source/config/commonMain/kotlin/org/example/project/config").get().asFile
-    outputs.dir(outputDir)
-    
-    // Pre-calculate the output file to avoid calling `file(...)` inside doLast
-    val configOutputFile = File(outputDir, "Config.kt")
-    val urlValue = supabaseUrl
-    val keyValue = supabaseKey
-
-    doLast {
-        outputDir.mkdirs()
-        configOutputFile.writeText("""
-            package org.example.project.config
-            
-            object Config {
-                const val SUPABASE_URL = "$urlValue"
-                const val SUPABASE_KEY = "$keyValue"
-            }
-        """.trimIndent())
-    }
-}
 
 kotlin {
     listOf(
@@ -87,7 +50,6 @@ kotlin {
     
     sourceSets {
         commonMain {
-            kotlin.srcDir(generateConfigTask)
         }
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)
@@ -97,6 +59,9 @@ kotlin {
             implementation(libs.ktor.client.darwin)
         }
         commonMain.dependencies {
+            implementation(project(":di"))
+            
+            // Compose Multiplatform UI
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.material3)
@@ -106,9 +71,12 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
-            implementation(libs.supabase.postgrest)
-            implementation(libs.ktor.client.core)
-            implementation(libs.kotlinx.serialization.json)
+            implementation(libs.androidx.lifecycle.viewmodel)
+            
+            // Dependency Injection (Koin)
+            implementation(libs.koin.core)
+            implementation(libs.koin.compose)
+            implementation(libs.koin.compose.viewmodel)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

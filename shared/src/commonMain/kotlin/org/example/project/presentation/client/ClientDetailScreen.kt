@@ -1,4 +1,4 @@
-package org.example.project.ui
+package org.example.project.presentation.client
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
@@ -18,10 +18,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.example.project.model.Client
+import org.example.project.domain.model.Client
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -293,24 +292,5 @@ private fun formatJoinedDate(isoString: String?): String {
         }
     } catch (e: Exception) {
         isoString.take(10)
-    }
-}
-
-@Preview
-@Composable
-fun ClientDetailScreenPreview() {
-    val sampleClient = Client(
-        id = 1,
-        name = "John Doe",
-        phoneNo = "+1 234 567 890",
-        address = "123 Main St, New York",
-        createdAt = "2023-10-27T10:00:00Z"
-    )
-    MaterialTheme {
-        ClientDetailScreen(
-            client = sampleClient,
-            showBackButton = true,
-            onBack = {}
-        )
     }
 }

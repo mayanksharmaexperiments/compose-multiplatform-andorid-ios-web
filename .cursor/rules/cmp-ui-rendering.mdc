@@ -1,0 +1,31 @@
+---
+description: Enforces rendering optimization, state hoisting, and performance conventions in Compose Multiplatform UI files.
+globs: **/ui/**/*.kt, **Screen.kt, **Component.kt
+---
+# Compose UI Rendering & Performance Rules
+
+This rule is applied automatically when viewing or editing Compose UI files, screens, or components to ensure high-performance rendering across mobile, desktop, and web targets.
+
+## 1. Unidirectional Data Flow & State Hoisting
+*Build stateless, modular composable layouts to simplify recycling and testing.*
+
+*   ✅ **State Hoisting:** Host the active UI state inside your shared `androidx.lifecycle.ViewModel` and pass read-only states (or data objects) and lambda callbacks down to children.
+*   ❌ **ViewModel inside Children:** Never pass ViewModels directly into reusable child composables. Only pass the specific slice of state and the action callback they need.
+
+---
+
+## 2. Recomposition Reduction
+*Compose Multiplatform runs on multiple engines. Keep recompositions efficient by deferring state reads.*
+
+*   ✅ **Lambda Deferral:** For fast-changing animations, offsets, or scroll computations, read state inside a modifier lambda block (e.g. `offset { IntOffset(...) }` or `drawBehind { ... }`).
+*   ✅ **Stable Keys:** Always supply a stable, unique `key` inside `LazyColumn` and `LazyRow` loops.
+*   ✅ **Content Type:** Specify `contentType` inside lazy lists to assist the system's item recycling memory pools.
+*   ✅ **derivedStateOf Throttling:** Buffer fast-changing inputs (like scroll states or search queries) through `derivedStateOf` before recomposing.
+
+---
+
+## 3. Lifecycle-Safe Collection
+*Observing reactive streams inside Compose must be done safely to prevent leaks and background drainage (especially critical on iOS).*
+
+*   ✅ **DO USE:** `collectAsStateWithLifecycle()` from `androidx.lifecycle.compose`.
+*   ❌ **NEVER USE:** `.collectAsState()` directly. It will leak CPU cycles when the screen is in the background.
